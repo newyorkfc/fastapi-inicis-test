@@ -1,4 +1,4 @@
-// 파이썬 requests 모듈을 이용해서 응답값으로 js 파일을 만들어 참고했다.
+// 파이썬 requests 모듈을 이용, 응답을 파일로 만들어 참고함.
 // requests.post(url="https://stdpay.inicis.com/stdjs/INIStdPay.js",
 //                              headers={"Content-type": "application/x-www-form-urlencoded", "charset": "utf-8"}).text
 

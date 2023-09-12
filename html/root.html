@@ -10,6 +10,11 @@
 <body>
 <h1>이니시스 카드 결제 테스트</h1><br><br>
 <form id="inputForm" action="http://127.0.0.1:8000/pay" method="POST">
+    <label for="gopaymethod">결제 방법:</label>
+    <select id="gopaymethod" name="gopaymethod">
+        <option value="Card">카드</option>
+        <option value="HPP">핸드폰</option>
+    </select><br><br>
     <label for="price">결제금액:</label>
     <input id="price" name="price" type="text"><br><br>
     <label for="goodname">상품명:</label>
