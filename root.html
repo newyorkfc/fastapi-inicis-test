@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>이니시스 결제 테스트</title>
+</head>
+<body>
+<h1>이니시스 카드 결제 테스트</h1><br><br>
+<form id="inputForm" action="http://127.0.0.1:8000/pay" method="POST">
+    <label for="price">결제금액:</label>
+    <input id="price" name="price" type="text"><br><br>
+    <label for="goodname">상품명:</label>
+    <input id="goodname" name="goodname" type="text"><br><br>
+    <label for="buyername">구매자명:</label>
+    <input id="buyername" name="buyername" type="text"><br><br>
+    <label for="buyertel">구매자 휴대폰번호:</label>
+    <input id="buyertel" name="buyertel" type="text"><br><br>
+    <label for="buyeremail">구매자 이메일주소:</label>
+    <input id="buyeremail" name="buyeremail" type="email"><br><br>
+    <input type="submit" value="결제하기">
+</form>
+</body>
+</html>
