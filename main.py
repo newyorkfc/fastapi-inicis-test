@@ -3,11 +3,15 @@ import json
 import os.path
 import random
 import string
+from base64 import b64encode
 from datetime import datetime
 from typing import Callable
 from urllib import parse
 
 import requests
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from _decimal import Decimal
 from fastapi import FastAPI
 from fastapi import Form
 from fastapi.encoders import jsonable_encoder
@@ -28,6 +32,7 @@ INIAPI iv   : HYb3yQ4f65QL89==
 MID = "INIpayTest"
 SIGN_KEY = "SU5JTElURV9UUklQTEVERVNfS0VZU1RS"
 INI_API_KEY = "ItEQKi3rY7uvDS8l"
+INI_API_IV = "HYb3yQ4f65QL89=="
 
 current_milli_time: Callable[[], str] = lambda: str(
     int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds() * 1000))
@@ -35,6 +40,13 @@ sha256_hash: Callable[[str], str] = lambda data: hashlib.sha256(data.encode()).h
 sha512_hash: Callable[[str], str] = lambda data: hashlib.sha512(data.encode()).hexdigest()
 generate_random_string: Callable[[], str] = lambda: ''.join(
     random.choice(string.ascii_letters + string.digits) for _ in range(10))
+
+
+def aes_128_cbc_encrypt(plain_text, key, iv):
+    cipher = AES.new(bytes(key.encode("UTF-8")), AES.MODE_CBC, iv.encode("UTF-8"))
+    padded_plain_text = pad(data_to_pad=plain_text.encode("UTF-8"), block_size=AES.block_size)
+    encrypted = cipher.encrypt(padded_plain_text)
+    return b64encode(encrypted).decode('utf-8')
 
 
 @app.get("/")
@@ -68,7 +80,7 @@ async def _(gopaymethod: str = Form(...),
     buyeremail = buyeremail
     returnUrl = "http://127.0.0.1:8000/return"
     closeUrlUrl = "http://127.0.0.1:8000/close"
-    acceptmethodUrl = "centerCd(Y)"
+    acceptmethodUrl = "centerCd(Y):HPP(2)"
 
     with open(os.path.join(os.path.dirname(__file__), "html", "pay.html"), 'r', encoding='UTF8') as f:
         html = (f.read()
@@ -90,9 +102,6 @@ async def _(gopaymethod: str = Form(...),
                 .replace("returnUrlInput", returnUrl)
                 .replace("closeUrlInput", closeUrlUrl)
                 .replace("acceptmethodInput", acceptmethodUrl))
-    print("###")
-    print(html)
-    print("###")
     return HTMLResponse(status_code=200, content=html)
 
 
@@ -200,8 +209,8 @@ async def _(netCancelUrl: str = Form(...),
             format=format,
         )
     )
-    net_cancel_data = json.loads(response.text)
-    return JSONResponse(status_code=200, content=jsonable_encoder(net_cancel_data))
+    json_data = json.loads(response.text)
+    return JSONResponse(status_code=200, content=jsonable_encoder(json_data))
 
 
 @app.post(path="/all-cancel")
@@ -234,8 +243,8 @@ async def _(paymethod: str = Form(...),
         headers={"Content-type": "application/x-www-form-urlencoded;charset=utf-8"},
         data=encoded_data,
     )
-    net_cancel_data = json.loads(response.text)
-    return JSONResponse(status_code=200, content=jsonable_encoder(net_cancel_data))
+    json_data = json.loads(response.text)
+    return JSONResponse(status_code=200, content=jsonable_encoder(json_data))
 
 
 @app.post(path="/part-cancel")
@@ -245,8 +254,7 @@ async def _(paymethod: str = Form(...),
             msg: str = Form(...),
             price: str = Form(...),
             TotPrice: str = Form(...), ):
-    # TODO: 2023-09-12 기준 부분취소 실패
-    type = "Refund"
+    type = "PartialRefund"
     paymethod = paymethod
     timestamp = datetime.now(timezone('Asia/Seoul')).strftime("%Y%m%d%H%M%S")
     clientIp = "127.0.0.1:8000"
@@ -275,5 +283,58 @@ async def _(paymethod: str = Form(...),
         headers={"Content-type": "application/x-www-form-urlencoded;charset=utf-8"},
         data=encoded_data,
     )
-    net_cancel_data = json.loads(response.text)
-    return JSONResponse(status_code=200, content=jsonable_encoder(net_cancel_data))
+    json_data = json.loads(response.text)
+    return JSONResponse(status_code=200, content=jsonable_encoder(json_data))
+
+
+@app.post("/receipt")
+async def _(crPrice: str = Form(...),
+            goodName: str = Form(...),
+            buyerName: str = Form(...),
+            buyerEmail: str = Form(...),
+            regNum: str = Form(...)):
+    type = "Issue"
+    paymethod = "Receipt"
+    timestamp = datetime.now(timezone('Asia/Seoul')).strftime("%Y%m%d%H%M%S")
+    clientIp = "127.0.0.1:8000"
+    mid = MID
+    crPrice = crPrice
+    supPrice = str(int(Decimal(crPrice) * Decimal("0.909")))  # TODO: 공급가액, 부가세 비율 확인 필요
+    tax = str(int(Decimal(crPrice) * Decimal("0.091")))
+    srcvPrice = str(0)
+    goodName = goodName
+    buyerName = buyerName
+    buyerEmail = buyerEmail
+    regNum = aes_128_cbc_encrypt(plain_text=regNum, key=INI_API_KEY, iv=INI_API_IV)
+    useOpt = "1"
+    hashData = sha512_hash(
+        f"{INI_API_KEY}{type}{paymethod}{timestamp}{clientIp}{mid}{crPrice}{supPrice}{srcvPrice}{regNum}"
+    )
+
+    data = dict(
+        type=type,
+        paymethod=paymethod,
+        timestamp=timestamp,
+        clientIp=clientIp,
+        mid=mid,
+        crPrice=crPrice,
+        supPrice=supPrice,
+        tax=tax,
+        srcvPrice=srcvPrice,
+        goodName=goodName,
+        buyerName=buyerName,
+        buyerEmail=buyerEmail,
+        regNum=regNum,
+        useOpt=useOpt,
+        hashData=hashData,
+    )
+    encoded_data = parse.urlencode(data)
+    response = requests.post(
+        url="https://iniapi.inicis.com/api/v1/receipt",
+        headers={"Content-type": "application/x-www-form-urlencoded;charset=utf-8"},
+        data=encoded_data,
+    )
+    json_data = json.loads(response.text)
+    return JSONResponse(status_code=200, content=jsonable_encoder(json_data))
+
+

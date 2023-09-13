@@ -5,7 +5,7 @@
     <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
           name="viewport">
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <title>이니시스 결제 테스트</title>
+    <title>이니시스 테스트</title>
 </head>
 <body>
 <h1>이니시스 카드 결제 테스트</h1><br><br>
@@ -27,5 +27,21 @@
     <input id="buyeremail" name="buyeremail" type="email"><br><br>
     <input type="submit" value="결제하기">
 </form>
+<br><br>
+<h1>이니시스 현금영수증 발행 테스트</h1><br><br>
+<form id="inputForm" action="http://127.0.0.1:8000/receipt" method="POST">
+    <label for="crPrice">결제금액:</label>
+    <input id="crPrice" name="crPrice" type="text"><br><br>
+    <label for="goodName">상품명:</label>
+    <input id="goodName" name="goodName" type="text"><br><br>
+    <label for="buyerName">구매자명:</label>
+    <input id="buyerName" name="buyerName" type="text"><br><br>
+    <label for="buyerEmail">구매자 이메일주소:</label>
+    <input id="buyerEmail" name="buyerEmail" type="email"><br><br>
+    <label for="regNum">현금영수증 식별번호 (주민번호,휴대폰번호,사업자번호):</label>
+    <input id="regNum" name="regNum" type="text"><br><br>
+    <input type="submit" value="신청하기">
+</form>
+<br><br>
 </body>
 </html>
