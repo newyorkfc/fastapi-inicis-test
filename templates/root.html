@@ -9,7 +9,7 @@
 </head>
 <body>
 <h1>이니시스 카드 결제 테스트</h1><br><br>
-<form id="inputForm" action="http://127.0.0.1:8000/pay" method="POST">
+<form id="inputForm" action="{{SERVER_URL}}pay" method="POST">
     <label for="gopaymethod">결제 방법:</label>
     <select id="gopaymethod" name="gopaymethod">
         <option value="Card">카드</option>
@@ -29,7 +29,7 @@
 </form>
 <br><br>
 <h1>이니시스 현금영수증 발행 테스트</h1><br><br>
-<form id="inputForm" action="http://127.0.0.1:8000/receipt" method="POST">
+<form id="inputForm" action="{{SERVER_URL}}receipt" method="POST">
     <label for="crPrice">결제금액:</label>
     <input id="crPrice" name="crPrice" type="text"><br><br>
     <label for="goodName">상품명:</label>

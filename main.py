@@ -12,13 +12,22 @@ import requests
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from _decimal import Decimal
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi import Form
 from fastapi.encoders import jsonable_encoder
+from fastapi.templating import Jinja2Templates
 from pytz import timezone
-from starlette.responses import HTMLResponse, JSONResponse
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 app = FastAPI()
+
+templates = Jinja2Templates(directory="templates")
+
+load_dotenv()
+SERVER_IP = os.getenv("SERVER_IP")
+SERVER_URL = os.getenv("SERVER_URL")
 
 '''
 [테스트 계정 정보]
@@ -29,6 +38,7 @@ INIAPI key : ItEQKi3rY7uvDS8l
 INIAPI iv   : HYb3yQ4f65QL89==
 모바일 hashkey : 3CB8183A4BE283555ACC8363C0360223
 '''
+
 MID = "INIpayTest"
 SIGN_KEY = "SU5JTElURV9UUklQTEVERVNfS0VZU1RS"
 INI_API_KEY = "ItEQKi3rY7uvDS8l"
@@ -50,14 +60,19 @@ def aes_128_cbc_encrypt(plain_text, key, iv):
 
 
 @app.get("/")
-async def root():
-    with open(os.path.join(os.path.dirname(__file__), "html", "root.html"), 'r', encoding='UTF8') as f:
-        html = f.read()
-    return HTMLResponse(content=html, status_code=200)
+async def root(request: Request):
+    return templates.TemplateResponse(
+        name="root.html",
+        context=dict(
+            request=request,
+            SERVER_URL=SERVER_URL,
+        )
+    )
 
 
 @app.post("/pay")
-async def _(gopaymethod: str = Form(...),
+async def _(request: Request,
+            gopaymethod: str = Form(...),
             price: str = Form(...),
             goodname: str = Form(...),
             buyername: str = Form(...),
@@ -78,35 +93,41 @@ async def _(gopaymethod: str = Form(...),
     buyername = buyername
     buyertel = buyertel
     buyeremail = buyeremail
-    returnUrl = "http://127.0.0.1:8000/return"
-    closeUrlUrl = "http://127.0.0.1:8000/close"
+    returnUrl = f"{SERVER_URL}return"
+    closeUrlUrl = f"{SERVER_URL}close"
     acceptmethodUrl = "centerCd(Y):HPP(2)"
 
-    with open(os.path.join(os.path.dirname(__file__), "html", "pay.html"), 'r', encoding='UTF8') as f:
-        html = (f.read()
-                .replace("versionInput", version)
-                .replace("gopaymethodInput", gopaymethod)
-                .replace("midInput", mid)
-                .replace("oidInput", oid)
-                .replace("priceInput", price)
-                .replace("timestampInput", timestamp)
-                .replace("use_chkfakeInput", use_chkfake)
-                .replace("signatureInput", signature)
-                .replace("verificationInput", verification)
-                .replace("mKeyInput", mKey)
-                .replace("currencyInput", currency)
-                .replace("goodnameInput", goodname)
-                .replace("buyernameInput", buyername)
-                .replace("buyertelInput", buyertel)
-                .replace("buyeremailInput", buyeremail)
-                .replace("returnUrlInput", returnUrl)
-                .replace("closeUrlInput", closeUrlUrl)
-                .replace("acceptmethodInput", acceptmethodUrl))
-    return HTMLResponse(status_code=200, content=html)
+    return templates.TemplateResponse(
+        status_code=200,
+        name="pay.html",
+        context=dict(
+            request=request,
+            SERVER_URL=SERVER_URL,
+            version=version,
+            gopaymethod=gopaymethod,
+            mid=mid,
+            oid=oid,
+            price=price,
+            timestamp=timestamp,
+            use_chkfake=use_chkfake,
+            signature=signature,
+            verification=verification,
+            mKey=mKey,
+            currency=currency,
+            goodname=goodname,
+            buyername=buyername,
+            buyertel=buyertel,
+            buyeremail=buyeremail,
+            returnUrl=returnUrl,
+            closeUrlUrl=closeUrlUrl,
+            acceptmethodUrl=acceptmethodUrl,
+        )
+    )
 
 
 @app.post(path="/return")
-async def _(resultCode: str = Form(None),
+async def _(request: Request,
+            resultCode: str = Form(None),
             resultMsg: str = Form(None),
             mid: str = Form(None),
             orderNumber: str = Form(None),
@@ -143,38 +164,40 @@ async def _(resultCode: str = Form(None),
 
     confirm_data = json.loads(response.text)
 
-    data = dict(
-        auth_resultCode=resultCode,
-        auth_resultMsg=resultMsg,
-        auth_mid=mid,
-        auth_orderNumber=orderNumber,
-        auth_authToken=authToken,
-        auth_idc_name=idc_name,
-        auth_authUrl=authUrl,
-        auth_netCancelUrl=netCancelUrl,
-        auth_charset=charset,
-        auth_merchantData=merchantData,
+    return templates.TemplateResponse(
+        status_code=200,
+        name="return.html",
+        context=dict(
+            request=request,
 
-        confirm_resultCode=confirm_data.get("resultCode"),
-        confirm_resultMsg=confirm_data.get("resultMsg"),
-        confirm_tid=confirm_data.get("tid"),
-        confirm_mid=confirm_data.get("mid"),
-        confirm_MOID=confirm_data.get("MOID"),
-        confirm_TotPrice=confirm_data.get("TotPrice"),
-        confirm_goodName=confirm_data.get("goodName"),
-        confirm_payMethod=confirm_data.get("payMethod"),
-        confirm_applDate=confirm_data.get("applDate"),
-        confirm_applTime=confirm_data.get("applTime"),
-        confirm_EventCode=confirm_data.get("EventCode"),
-        confirm_buyerName=confirm_data.get("buyerName"),
-        confirm_buyerTel=confirm_data.get("buyerTel"),
-        confirm_buyerEmail=confirm_data.get("buyerEmail"),
-        confirm_custEmail=confirm_data.get("custEmail"),
+            auth_resultCode=resultCode,
+            auth_resultMsg=resultMsg,
+            auth_mid=mid,
+            auth_orderNumber=orderNumber,
+            auth_authToken=authToken,
+            auth_idc_name=idc_name,
+            auth_authUrl=authUrl,
+            auth_netCancelUrl=netCancelUrl,
+            auth_charset=charset,
+            auth_merchantData=merchantData,
+
+            confirm_resultCode=confirm_data.get("resultCode"),
+            confirm_resultMsg=confirm_data.get("resultMsg"),
+            confirm_tid=confirm_data.get("tid"),
+            confirm_mid=confirm_data.get("mid"),
+            confirm_MOID=confirm_data.get("MOID"),
+            confirm_TotPrice=confirm_data.get("TotPrice"),
+            confirm_goodName=confirm_data.get("goodName"),
+            confirm_payMethod=confirm_data.get("payMethod"),
+            confirm_applDate=confirm_data.get("applDate"),
+            confirm_applTime=confirm_data.get("applTime"),
+            confirm_EventCode=confirm_data.get("EventCode"),
+            confirm_buyerName=confirm_data.get("buyerName"),
+            confirm_buyerTel=confirm_data.get("buyerTel"),
+            confirm_buyerEmail=confirm_data.get("buyerEmail"),
+            confirm_custEmail=confirm_data.get("custEmail"),
+        )
     )
-
-    with open(os.path.join(os.path.dirname(__file__), "html", "return.html"), 'r', encoding='UTF8') as f:
-        html = f.read().format(**data)
-    return HTMLResponse(content=html, status_code=200)
 
 
 @app.get(path="/close")
@@ -221,7 +244,7 @@ async def _(paymethod: str = Form(...),
     type = "Refund"
     paymethod = paymethod
     timestamp = datetime.now(timezone('Asia/Seoul')).strftime("%Y%m%d%H%M%S")
-    clientIp = "127.0.0.1:8000"
+    clientIp = SERVER_IP
     mid = mid
     tid = tid
     msg = msg
@@ -257,7 +280,7 @@ async def _(paymethod: str = Form(...),
     type = "PartialRefund"
     paymethod = paymethod
     timestamp = datetime.now(timezone('Asia/Seoul')).strftime("%Y%m%d%H%M%S")
-    clientIp = "127.0.0.1:8000"
+    clientIp = SERVER_IP
     mid = mid
     tid = tid
     msg = msg
@@ -296,7 +319,7 @@ async def _(crPrice: str = Form(...),
     type = "Issue"
     paymethod = "Receipt"
     timestamp = datetime.now(timezone('Asia/Seoul')).strftime("%Y%m%d%H%M%S")
-    clientIp = "127.0.0.1:8000"
+    clientIp = SERVER_IP
     mid = MID
     crPrice = crPrice
     supPrice = str(int(Decimal(crPrice) * Decimal("0.909")))  # TODO: 공급가액, 부가세 비율 확인 필요
@@ -338,3 +361,7 @@ async def _(crPrice: str = Form(...),
     return JSONResponse(status_code=200, content=jsonable_encoder(json_data))
 
 
+if __name__ == '__main__':
+    # INIStdPay.js 코드 보기
+    print(requests.post(url="https://stdpay.inicis.com/stdjs/INIStdPay.js",
+                        headers={"Content-type": "application/x-www-form-urlencoded", "charset": "utf-8"}).text)
