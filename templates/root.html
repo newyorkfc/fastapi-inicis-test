@@ -38,8 +38,13 @@
     <input id="buyerName" name="buyerName" type="text"><br><br>
     <label for="buyerEmail">구매자 이메일주소:</label>
     <input id="buyerEmail" name="buyerEmail" type="email"><br><br>
-    <label for="regNum">현금영수증 식별번호 (주민번호,휴대폰번호,사업자번호):</label>
+    <label for="regNum">현금영수증 식별번호 ( - 없이 주민번호 or 휴대폰번호 or 사업자번호 ):</label>
     <input id="regNum" name="regNum" type="text"><br><br>
+    <label for="useOpt">현금영수증 발행용도:</label>
+    <select id="useOpt" name="useOpt">
+        <option value="0">소득공제</option>
+        <option value="1">지출증빙</option>
+    </select><br><br>
     <input type="submit" value="신청하기">
 </form>
 <br><br>
