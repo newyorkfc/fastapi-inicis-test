@@ -73,5 +73,14 @@
     <input type="submit" value="요청"><br>
 </form>
 <br><br>
+<h1>영수증 조회</h1><br>
+<button onclick="openPopup()">조회</button>
+<script>
+    var tid = "{{confirm_tid}}";
+    console.log(tid); // 없으면 에러 발생. 이유 모름.
+    function openPopup() {
+        window.open("https://iniweb.inicis.com/receipt/iniReceipt.jsp?noTid=" + tid, "Popup Window", "width=500,height=500");
+    }
+</script>
 </body>
 </html>

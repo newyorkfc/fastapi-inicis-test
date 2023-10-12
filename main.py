@@ -5,7 +5,7 @@ import random
 import string
 from base64 import b64encode
 from datetime import datetime
-from typing import Callable
+from typing import Callable, Annotated, Any
 from urllib import parse
 
 import requests
@@ -58,6 +58,13 @@ def aes_128_cbc_encrypt(plain_text, key, iv):
     encrypted = cipher.encrypt(padded_plain_text)
     return b64encode(encrypted).decode('utf-8')
 
+
+def get_supply_cost(total_amount: Annotated[Any, lambda x: x.isdecimal()]) -> str:
+    return str(round(Decimal(str(total_amount)) * Decimal("0.909")))
+
+
+def get_tax(total_amount: Annotated[Any, lambda x: x.isdecimal()]) -> str:
+    return str(round(Decimal(total_amount) * Decimal("0.091")))
 
 @app.get("/")
 async def root(request: Request):
@@ -322,8 +329,8 @@ async def _(crPrice: str = Form(...),
     clientIp = SERVER_IP
     mid = MID
     crPrice = crPrice
-    supPrice = str(int(Decimal(crPrice) * Decimal("0.909")))  # TODO: 공급가액, 부가세 비율 확인 필요
-    tax = str(int(Decimal(crPrice) * Decimal("0.091")))
+    supPrice = get_supply_cost(total_amount=crPrice)
+    tax = get_tax(total_amount=crPrice)
     srcvPrice = str(0)
     goodName = goodName
     buyerName = buyerName
